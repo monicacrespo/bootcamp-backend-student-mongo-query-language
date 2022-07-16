@@ -1,183 +1,382 @@
-# bootcamp-backend-student-mongo-query-language
+# Basic
+## Restore backup
 
-##Restore backup
-Restore data set de mongo atlas airbnb.
-
-You can find it in this link: https://drive.google.com/drive/folders/1gAtZZdrBKiKioJSZwnShXskaKk6H_gCJ?usp=sharing
+Restore an airbnb database. You can find it in this link: https://drive.google.com/drive/folders/1gAtZZdrBKiKioJSZwnShXskaKk6H_gCJ?usp=sharing
 
 You could follow the following instructions: https://www.lemoncode.tv/curso/docker-y-mongodb/leccion/restaurando-backup-mongodb
 
-Acuérdate de mirar si en opt/app hay contenido de backups previos que tengas que borrar
+You can find a sample in this link: https://www.mongodb.com/docs/atlas/sample-data/sample-airbnb/
 
-##General
-En este base de datos puedes encontrar un montón de apartamentos y sus reviews, esto está sacado de hacer webscrapping.
+Please, remember to check whether there are any previous backups in opt/app that you would need to delete.
 
-Pregunta: Si montaras un sitio real, ¿qué posibles problemas pontenciales le ves a cómo está almacenada la información?
+## General
+In this database you could find a lot of apartments and their reviews, obtained from  webscrapping.
 
-##Queries
+Question: If you were using a real site, what potential issues you foresee in the way the information is stored?
 
-* Saca en una consulta cuántos apartamentos hay en España.
+Storing large documents in your database can lead to excessive RAM and bandwidth usage. MongoDB keeps frequently accessed data, referred to as the working set, in RAM. When the working set grows beyond the RAM allotment, performance is degraded as data must be retrieved from disk instead.
+
+If your most frequent queries are for documents that contain much more information than you need for that query, consider restructuring your schema with smaller documents using references to additional collections. By breaking up your data into more collections and using smaller documents for frequently accessed data, you reduce the overall size of the working set and improve performance.
+
+## Queries
+### Basic
+* Get how many apartments there are in Spain.
 ```
 use('listingsAndReviews');
 db.listingsAndReviews.countDocuments({ "address.country": { $eq: "Spain" } } );
 ```
-* Lista los 10 primeros:
-
-Sólo muestra: nombre, camas, precio, government_area
-Ordenados por precio.
 
 ```
-use('listingsAndReviews');
-db.listingsAndReviews.aggregate ( 
-   [
-     { $match: { "address.country": { $eq: "Spain" } } },
-     { $sort : { price : 1, _id: 1 } },
-     { $limit : 10 },
-     { $project : { name:1, beds:1, price:1, "address.government_area":1 } }
-   ]
-)
+// Result
+633
 ```
-Since the _id field is always guaranteed to contain exclusively unique values, the returned sort order will always be the same across multiple executions of the same sort.
+
+* Get the first 10 records sorted by price. The fields that need to be displayed are: name, beds, price, government_area
 
 ```
 use('listingsAndReviews');
 db.listingsAndReviews.find(
-    { "address.country": { $eq: "Spain" } }, { name:1, beds:1, price:1, "address.government_area":1 } 
-    ).sort({aprice : 1, _id: 1}).limit(10)
+    { "address.country": { $eq: "Spain" } }, 
+    { _id: 0, name: 1, beds: 1, price: 1, government_area: "$address.government_area" } 
+    ).sort({price: 1, _id: 1}).limit(10)
 ```
-Result
+
 ```
+// Result
 [
   {
-    "_id": "20611485",
     "name": "Cómoda Habitación L'Eixample, Gracia",
     "beds": 2,
     "price": {
       "$numberDecimal": "10.00"
     },
-    "address": {
-      "government_area": "la Nova Esquerra de l'Eixample"
-    }
+    "government_area": "la Nova Esquerra de l'Eixample"
   },
+  ...
   {
-    "_id": "31305846",
-    "name": "Private room with sunny terrace of 200m2. 6",
-    "beds": 1,
-    "price": {
-      "$numberDecimal": "10.00"
-    },
-    "address": {
-      "government_area": "la Maternitat i Sant Ramon"
-    }
-  },
-  {
-    "_id": "32636126",
-    "name": "Near the RAMBLA, the double room at  SEASIDE PORT1",
-    "beds": 1,
-    "price": {
-      "$numberDecimal": "10.00"
-    },
-    "address": {
-      "government_area": "el Raval"
-    }
-  },
-  {
-    "_id": "8521963",
-    "name": "Habitación privada",
-    "beds": 1,
-    "price": {
-      "$numberDecimal": "12.00"
-    },
-    "address": {
-      "government_area": "la Bordeta"
-    }
-  },
-  {
-    "_id": "18121163",
-    "name": "Heart of the City-Cozy Room Private Sunny Balcony!",
-    "beds": 1,
-    "price": {
-      "$numberDecimal": "14.00"
-    },
-    "address": {
-      "government_area": "la Vila de Gràcia"
-    }
-  },
-  {
-    "_id": "19741944",
-    "name": "Habitación individual.",
-    "beds": 1,
-    "price": {
-      "$numberDecimal": "14.00"
-    },
-    "address": {
-      "government_area": "el Fort Pienc"
-    }
-  },
-  {
-    "_id": "10716793",
-    "name": "DOUBLE ROOM for 1 or 2 ppl",
-    "beds": 1,
-    "price": {
-      "$numberDecimal": "15.00"
-    },
-    "address": {
-      "government_area": "la Sagrada Família"
-    }
-  },
-  {
-    "_id": "15320378",
-    "name": "Hab. individual en Barcelona / Single room in Bcn",
-    "beds": 1,
-    "price": {
-      "$numberDecimal": "15.00"
-    },
-    "address": {
-      "government_area": "Sants"
-    }
-  },
-  {
-    "_id": "15353532",
-    "name": "Nice room in artistic apartment, very central",
-    "beds": 1,
-    "price": {
-      "$numberDecimal": "15.00"
-    },
-    "address": {
-      "government_area": "Sant Pere, Santa Caterina i la Ribera"
-    }
-  },
-  {
-    "_id": "17573977",
     "name": "Bright room in sagrada familia",
     "beds": 2,
     "price": {
       "$numberDecimal": "15.00"
     },
-    "address": {
-      "government_area": "la Sagrada Família"
-    }
+    "government_area": "la Sagrada Família"
   }
+```
+Since the _id field is always guaranteed to contain exclusively unique values, the returned sort order will always be the same across multiple executions of the same sort.
+
+### Filters
+
+* We want to comfortably travel, we are four people and we want four beds and two toilets.
+
+```
+use('listingsAndReviews');
+db.listingsAndReviews.find({ 
+$and: [
+      {"beds": {$eq: 4}},
+      {"bathrooms": {$eq: 2}}
+]
+},{ _id: 0, name: 1, beds: 1, bathrooms: 1, price: 1}
+);
+```
+
+* Besides, we like the apartment comes with WIFI
+
+```
+use('listingsAndReviews');
+db.listingsAndReviews.find({ 
+$and: [
+      {"beds": {$eq: 4}},
+      {"bathrooms": {$eq: 2}},
+      { amenities: "Wifi" }
+]
+},{ _id: 0, name: 1, beds: 1, bathrooms: 1, amenities: 1, price: 1}
+);
+```
+
+```
+// Result
+[
+  {
+    "name": "Waterfront, Enchanted Lake Home 2/1",
+    "beds": 4,
+    "bathrooms": {
+      "$numberDecimal": "2.0"
+    },
+    "amenities": [
+      "TV",
+      "Internet",
+      "Wifi",
+      "Air conditioning",
+      "Wheelchair accessible",
+      "Kitchen",
+      "Free parking on premises",
+      "Free street parking",
+      "Family/kid friendly",
+      "Washer",
+      "Dryer",
+      "Smoke detector",
+      "Carbon monoxide detector",
+      "Essentials",
+      "24-hour check-in",
+      "Hangers",
+      "Hair dryer",
+      "Iron",
+      "Self check-in",
+      "Keypad",
+      "Private entrance",
+      "Hot water",
+      "Bed linens",
+      "Extra pillows and blankets",
+      "Microwave",
+      "Coffee maker",
+      "Refrigerator",
+      "Stove",
+      "Patio or balcony",
+      "Long term stays allowed"
+    ],
+    "price": {
+      "$numberDecimal": "189.00"
+    }
+  },
+  ...
 ]
 ```
 
-Filtrando
-Queremos viajar cómodos, somos 4 personas y queremos:
-4 camas.
-Dos cuartos de baño.
-// Pega aquí tu consulta
-Al requisito anterior, hay que añadir que nos gusta la tecnología queremos que el apartamento tenga wifi.
-// Pega aquí tu consulta
-Y bueno, un amigo se ha unido que trae un perro, así que a la query anterior tenemos que buscar que permitan mascota Pets Allowed
-// Pega aquí tu consulta
-Operadores lógicos
-Estamos entre ir a Barcelona o a Portugal, los dos destinos nos valen, peeero... queremos que el precio nos salga baratito (50 $), y que tenga buen rating de reviews
-// Pega aquí tu consulta
-Agregaciones
-Queremos mostrar los pisos que hay en España, y los siguiente campos:
-Nombre.
-De que ciudad (no queremos mostrar un objeto, solo el string con la ciudad)
-El precio (no queremos mostrar un objeto, solo el campo de precio)
-// Pega aquí tu consulta
-Queremos saber cuántos alojamientos hay disponibles por país.
-// Pega aquí tu consulta
+* Besides, a friend with a dog has joined, so, we would need an apartment with Pets Allowed
+
+```
+use('listingsAndReviews');
+db.listingsAndReviews.find({ 
+$and: [
+      {"beds": {$eq: 4}},
+      {"bathrooms": {$eq: 2}},
+      {"amenities": { $all: ["Wifi", "Pets allowed"] } }
+]
+},{ _id: 0, name: 1, beds: 1, bathrooms: 1, amenities: 1, price: 1}
+);
+```
+
+```
+// Result
+[
+  {
+    "name": "Penthouse. Terrace.",
+    "beds": 4,
+    "bathrooms": {
+      "$numberDecimal": "2.0"
+    },
+    "amenities": [
+      "TV",
+      "Internet",
+      "Wifi",
+      "Air conditioning",
+      "Wheelchair accessible",
+      "Kitchen",
+      "Paid parking off premises",
+      "Pets allowed",
+      "Elevator",
+      "Buzzer/wireless intercom",
+      "Heating",
+      "Family/kid friendly",
+      "Washer",
+      "Dryer",
+      "Smoke detector",
+      "Carbon monoxide detector",
+      "Fire extinguisher",
+      "Essentials",
+      "Shampoo",
+      "24-hour check-in",
+      "Hangers",
+      "Hair dryer",
+      "Iron",
+      "Laptop friendly workspace",
+      "High chair",
+      "Children’s books and toys",
+      "Crib",
+      "Pack ’n Play/travel crib",
+      "Hot water",
+      "Microwave",
+      "Coffee maker",
+      "Refrigerator",
+      "Dishwasher",
+      "Dishes and silverware",
+      "Cooking basics",
+      "Oven",
+      "Stove",
+      "Long term stays allowed",
+      "Host greets you",
+      "Paid parking on premises"
+    ],
+    "price": {
+      "$numberDecimal": "87.00"
+    }
+  },
+  ...
+]
+```
+
+### Logical Query Operators
+* We are between going to Barcelona or Portugal, but we want the price to be cheap (50 $), and a good review scores rating.
+
+```
+use('listingsAndReviews');
+db.listingsAndReviews.find({ 
+$and: [
+      {"price": { $eq: 50 } },
+      {"review_scores.review_scores_rating": {$gt: 9}},      
+      {
+       $or: [
+            { "address.market": { $eq: "Barcelona" } },
+            { "address.country": { $eq: "Portugal" } }            
+            ]
+      }
+]
+},
+{ _id: 0, name: 1, "address.country": 1, "address.market": 1, price: 1, review_score_rating: "$review_scores.review_scores_rating"}
+);
+```
+
+```
+// Result
+[
+  {
+    "name": "B. Arts IV",
+    "price": {
+      "$numberDecimal": "50.00"
+    },
+    "address": {
+      "market": "Porto",
+      "country": "Portugal"
+    },
+    "review_score_rating": 100
+  },
+  {
+    "name": "The Porto Concierge - White Martin",
+    "price": {
+      "$numberDecimal": "50.00"
+    },
+    "address": {
+      "market": "Porto",
+      "country": "Portugal"
+    },
+    "review_score_rating": 90
+  },
+  ...
+]
+```
+
+### $group (aggregation)
+
+* Get the apartments in Spain with the following fields:
+  * Name
+  * City (we dont want to display an object, only the string with the city)
+  * Price 
+
+```
+use('listingsAndReviews');
+db.listingsAndReviews.aggregate([  
+  { $match: { "address.country": { $eq: "Spain" } } },
+  { $project: { _id: 0, name: 1, city: "$address.market", price: 1} }
+])
+```
+
+```
+// Result
+[
+  {
+    "name": "Nice room in Barcelona Center",
+    "price": {
+      "$numberDecimal": "50.00"
+    },
+    "city": "Barcelona"
+  },
+  {
+    "name": "Cozy bedroom Sagrada Familia",
+    "price": {
+      "$numberDecimal": "20.00"
+    },
+    "city": "Barcelona"
+  },
+  ...
+]
+```
+
+* Get how many listings are available per country
+```
+use('listingsAndReviews');
+db.listingsAndReviews.aggregate([
+  {
+    $unwind: "$address.country"
+  },
+  {
+    $group: {
+      _id: { country: "$address.country" },
+      countNumberOfDocumentsForCountry: { $count: {} }
+      }
+  },
+  {
+    $sort: {
+      _id: 1
+    }
+  }
+])
+```
+```
+// Result
+[
+  {
+    "_id": {
+      "country": "Australia"
+    },
+    "countNumberOfDocumentsForCountry": 610
+  },
+  {
+    "_id": {
+      "country": "Brazil"
+    },
+    "countNumberOfDocumentsForCountry": 606
+  },
+  {
+    "_id": {
+      "country": "Canada"
+    },
+    "countNumberOfDocumentsForCountry": 649
+  },
+  {
+    "_id": {
+      "country": "China"
+    },
+    "countNumberOfDocumentsForCountry": 19
+  },
+  {
+    "_id": {
+      "country": "Hong Kong"
+    },
+    "countNumberOfDocumentsForCountry": 600
+  },
+  {
+    "_id": {
+      "country": "Portugal"
+    },
+    "countNumberOfDocumentsForCountry": 555
+  },
+  {
+    "_id": {
+      "country": "Spain"
+    },
+    "countNumberOfDocumentsForCountry": 633
+  },
+  {
+    "_id": {
+      "country": "Turkey"
+    },
+    "countNumberOfDocumentsForCountry": 661
+  },
+  {
+    "_id": {
+      "country": "United States"
+    },
+    "countNumberOfDocumentsForCountry": 1222
+  }
+]
+```
